@@ -1,14 +1,14 @@
-# VANTAGE
+# VANTAGE — Vulnerability Assessment and Testing Automation for Global Enhancements
 
-**Vulnerability Assessment and Threat Intelligence with Evidence-Guided Repair**
+**Evidence-guided security repair agent**
 
 VANTAGE is an agent-oriented security research project. Its first runnable component is a conservative Python source analyzer that turns suspicious code patterns into traceable evidence and mitigation guidance. It does not change source files, claim that a finding is exploitable, or pretend that a suggested mitigation is proven correct.
 
 ## Evidence-Guided Repair Agent (MVP)
 
-The agent currently inspects a Python file for high-risk patterns: dynamic `eval`/`exec`, unsafe pickle loading, subprocess shell execution, SQL strings built with interpolation, and unsafe PyYAML loading. Each finding includes a source location, code excerpt, evidence type, rationale, suggested remediation, and limits of the analysis.
+The agent currently inspects a Python file for high-risk patterns: dynamic `eval`/`exec`, unsafe pickle loading, subprocess shell execution, SQL strings built with interpolation, and unsafe PyYAML loading. Each finding includes a source location, code excerpt, rationale, suggested remediation, and limits of the analysis. For one simple YAML loader call, it can also emit a unified diff proposal using `yaml.safe_load`; it never applies that proposal.
 
-The agent is deliberately **human-gated and read-only**. Static evidence can identify a risky sink, but this MVP does not perform taint analysis or know whether data is attacker-controlled. It therefore returns review guidance instead of silently rewriting code.
+The agent is deliberately **human-gated**. Static evidence can identify a risky sink, but this MVP does not perform taint analysis or know whether data is attacker-controlled. It therefore returns a narrow, reviewable patch proposal only for a simple YAML loader case and review guidance for other findings.
 
 ## Quick start
 
@@ -35,12 +35,12 @@ Exit codes: `0` means analysis completed (findings may be present); `2` means th
 - Preserve source provenance for every evidence item.
 - Separate a risky code pattern from a confirmed vulnerability.
 - Include counterevidence and limitations instead of inventing certainty.
-- Keep analysis read-only; a future patch generator must return a reviewable diff and require explicit human approval before application.
+- Never edit source automatically; patch proposals are reviewable diffs and require explicit human approval before application.
 - Evaluate repair proposals with hidden tests and independent human review, while keeping those oracles out of the agent's repair context.
 
 ## Current limits
 
-This is a research MVP, not a production security scanner. It supports Python AST patterns only, does not track tainted data across functions or files, does not mine repository history, does not generate patches, and has not been evaluated on a real vulnerability benchmark. The included tests validate detector behavior on small fixtures only.
+This is a research MVP, not a production security scanner. It supports Python AST patterns only, does not track tainted data across functions or files, does not mine repository history, and has not been evaluated on a real vulnerability benchmark. Patch proposals are limited and require human review. The included tests validate behavior on small fixtures only.
 
 ## Project map
 
