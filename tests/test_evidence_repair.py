@@ -20,7 +20,18 @@ class EvidenceRepairTests(unittest.TestCase):
         report = EvidenceRepairAgent().analyze(ROOT / "fixtures" / "ordinary.py", ROOT)
         self.assertEqual(report.decision, "no_supported_finding")
         self.assertIn("does not establish", report.summary)
-        self.assertIsNone(report.patch)
+        self.assertEqual(report.patch_proposals, [])
+
+    def test_yaml_loader_generates_reviewable_diff_without_editing_source(self):
+        source_path = ROOT / "fixtures" / "yaml_loader.py"
+        before = source_path.read_text(encoding="utf-8")
+        report = EvidenceRepairAgent().analyze(source_path, ROOT)
+        self.assertEqual(len(report.patch_proposals), 1)
+        proposal = report.patch_proposals[0]
+        self.assertIn("-    return yaml.load(text)", proposal.patch)
+        self.assertIn("+    return yaml.safe_load(text)", proposal.patch)
+        self.assertEqual(source_path.read_text(encoding="utf-8"), before)
+        self.assertEqual(proposal.status, "human_review_required")
 
     def test_eval_and_exec_are_reported_as_unconfirmed_risk_signals(self):
         findings = analyze_python_source("def f(x):\n    return eval(x)\n")
