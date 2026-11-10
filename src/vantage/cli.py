@@ -40,6 +40,10 @@ def main() -> None:
         print(f"Code: {finding['excerpt']}")
         print(f"Suggested review: {finding['remediation']}")
         print(f"Limit: {finding['limitations']}")
+    for proposal in report["patch_proposals"]:
+        print(f"\nPatch proposal: {proposal['proposal_id']} ({proposal['status']})")
+        print(proposal["patch"])
+        print(f"Review note: {proposal['limitations']}")
     print(f"\nNext step: {report['next_step']}")
 
 
