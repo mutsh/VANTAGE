@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import difflib
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -54,10 +55,21 @@ class EvidenceRepairAgent:
 
     @staticmethod
     def _yaml_loader_proposals(path: Path, findings: list[Finding]) -> list[PatchProposal]:
-        source_lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+        source = path.read_text(encoding="utf-8")
+        source_lines = source.splitlines(keepends=True)
+        eligible_lines = {
+            node.lineno for node in ast.walk(ast.parse(source))
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "yaml"
+            and node.func.attr in {"load", "full_load", "unsafe_load"}
+            and len(node.args) == 1 and not node.keywords
+            and node.lineno == node.end_lineno
+        }
         proposals: list[PatchProposal] = []
         for finding in findings:
-            if finding.rule_id != "PYSEC-YAML-001":
+            if finding.rule_id != "PYSEC-YAML-001" or finding.line not in eligible_lines:
                 continue
             index = finding.line - 1
             if index < 0 or index >= len(source_lines):

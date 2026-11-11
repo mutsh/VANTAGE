@@ -57,3 +57,21 @@ python -m unittest discover -s tests -v
 ```
 
 Before describing any output as a correct repair, use the benchmark protocol in [`docs/research_and_evaluation.md`](docs/research_and_evaluation.md). A detector smoke test is not a security benchmark.
+
+## Repository scanning and delivery foundation (v0.2)
+
+```bash
+vantage scan --repo ./service --format json > report.json
+vantage scan --repo ./service --format sarif > report.sarif
+```
+
+Scans include Python source hashes and visible per-file errors. Test/build/dependency directories and symlinks are excluded. An incomplete scan exits with code 2; findings themselves do not change the exit code. No findings is not a security verdict. YAML proposals are restricted to simple single-line calls with exactly one positional argument and no keywords; other loader signatures require manual remediation.
+
+CI checks supported Python versions and builds a non-root container. To run against your own checkout:
+
+```bash
+docker build -t vantage:local .
+docker run --rm --network none --read-only --cap-drop ALL -v "$PWD:/repo:ro" vantage:local scan --repo /repo --format sarif
+```
+
+The container build is a delivery recipe, not a deployed service. Dependency/action/image pinning and platform-specific approvals remain release prerequisites. See [the production and research plan](docs/production_research_plan.md) for the AppSec use case, multi-agent architecture, framework choices, scientific hypotheses, and staged acceptance criteria.
