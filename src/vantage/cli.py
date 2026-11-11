@@ -9,6 +9,7 @@ from pathlib import Path
 
 from vantage.agents.evidence_repair import EvidenceRepairAgent
 from vantage.pipeline import scan_repository, to_sarif
+from vantage.workflow import MultiAgentWorkflow
 from vantage.analysis.python_security import SourceAnalysisError
 
 
@@ -22,11 +23,30 @@ def build_parser() -> argparse.ArgumentParser:
     scan = sub.add_parser("scan", help="scan repository Python source without execution")
     scan.add_argument("--repo", type=Path, required=True)
     scan.add_argument("--format", choices=("json", "sarif"), default="json")
+    run = sub.add_parser("run", help="run the local multi-agent workflow")
+    run.add_argument("--repo", type=Path, required=True)
+    run.add_argument("--dynamic", action="store_true", help="execute repository test code in Docker workers")
+    run.add_argument("--image", default="vantage-worker:local")
+    run.add_argument("--model", help="installed Ollama model name; optional local AI repair generation")
+    run.add_argument("--timeout", type=int, default=60)
+    run.add_argument("--output", type=Path, required=True, help="JSON report path outside target repository")
     return parser
 
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.command == "run":
+        try:
+            if args.output.resolve().is_relative_to(args.repo.resolve()):
+                raise ValueError("Write the report outside the target repository")
+            report = MultiAgentWorkflow().run(args.repo, args.dynamic, args.image, args.timeout, args.model)
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(report, indent=2), encoding="utf-8")
+            print(f"Run {report['status']}; report: {args.output}")
+        except (OSError, ValueError) as exc:
+            print(f"vantage: {exc}", file=sys.stderr)
+            raise SystemExit(2) from exc
+        raise SystemExit(2 if report["status"] == "incomplete" else 0)
     if args.command == "scan":
         try:
             scan = scan_repository(args.repo)

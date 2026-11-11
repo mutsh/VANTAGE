@@ -26,3 +26,12 @@ jobs:
       - uses: actions/checkout@v4
       - run: docker build -t vantage:ci .
       - run: docker run --rm --network none --read-only --cap-drop ALL vantage:ci --help
+
+      - run: pip install .
+      - run: docker build -f docker/Dockerfile.worker -t vantage-worker:local .
+      - run: vantage run --repo examples/yaml_demo --dynamic --output demo-report.json
+      - run: python -c "import json; r=json.load(open('demo-report.json')); assert r['candidates'][0]['decision'] == 'plausible_repair_human_review_required', r"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dynamic-demo-evidence
+          path: demo-report.json

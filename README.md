@@ -75,3 +75,13 @@ docker run --rm --network none --read-only --cap-drop ALL -v "$PWD:/repo:ro" van
 ```
 
 The container build is a delivery recipe, not a deployed service. Dependency/action/image pinning and platform-specific approvals remain release prerequisites. See [the production and research plan](docs/production_research_plan.md) for the AppSec use case, multi-agent architecture, framework choices, scientific hypotheses, and staged acceptance criteria.
+
+## Run the local multi-agent workflow
+
+See [Run on your PC](docs/run_on_pc.md) for Windows PowerShell and Linux/macOS setup, the dynamic demo, worker limits, and optional local Ollama repair proposals.
+
+```bash
+vantage run --repo examples/yaml_demo --dynamic --output demo-report.json
+```
+
+Build `docker/Dockerfile.worker` as `vantage-worker:local` first. The workflow freezes proposals before running evaluator-only security and functional suites in separate containers. It never changes the original repository. This extends the static agent: dynamic execution is opt-in and unavailable evidence remains unverified. The default repair baseline is deterministic; `--model` adds a locally hosted model without cloud API keys. The previous sections describe the narrower static-only commands.
